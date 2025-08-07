@@ -1,41 +1,50 @@
 import logging
 import os
-from telegram import Update
-from telegram.ext import (
-    ApplicationBuilder, CommandHandler,
-    MessageHandler, filters, ContextTypes
-)
+import requests
+import re
 from dotenv import load_dotenv
-from keep_alive import keep_alive
+from telegram import Update
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 
 load_dotenv()
-
 TOKEN = os.getenv("TOKEN")
-OWNER_ID = int(os.getenv("OWNER_ID"))
+OWNER_ID = int(os.getenv("OWNER_ID", "123456789"))
 
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
-)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Привет! Я ИИ-помощник по заведениям для отдыха. Напиши, что ты хочешь найти — и я подскажу!")
+    await update.message.reply_text("Привет! 👋 Я ИИ-помощник по заведениям. Просто напиши, куда хочешь сходить!")
 
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Просто напиши, что ты ищешь — например: "Хочу бар с живой музыкой в Алматы".")
+def duckduckgo_search(query, max_results=3):
+    headers = {
+        "User-Agent": "Mozilla/5.0"
+    }
+    url = f"https://html.duckduckgo.com/html/?q={query}+site:2gis.kz"
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        matches = re.findall(r'<a rel="nofollow" class="result__a" href="(.*?)">(.*?)</a>', response.text)
+        return matches[:max_results]
+    except Exception as e:
+        logger.error(f"Search error: {e}")
+        return []
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
-    await update.message.reply_text(f"🔍 Ищу для тебя лучшие варианты по запросу: {text}... (Здесь будет ИИ-подбор и фото)")
+    chat_id = update.message.chat_id
+    await update.message.reply_text(f"🔍 Ищу для тебя лучшие варианты по запросу: {text}...")
 
-def main():
+    results = duckduckgo_search(text)
+
+    if not results:
+        await update.message.reply_text("😔 Не удалось найти подходящие места. Попробуй переформулировать запрос.")
+        return
+
+    for url, title in results:
+        await update.message.reply_text(f"🏙 {title}\n🔗 {url}")
+
+if __name__ == '__main__':
     app = ApplicationBuilder().token(TOKEN).build()
-
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("help", help_command))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-
-    keep_alive()
     app.run_polling()
-
-if __name__ == "__main__":
-    main()
