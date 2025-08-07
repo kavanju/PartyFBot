@@ -25,7 +25,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
-    await update.message.reply_text(f"🔍 Ищу для тебя лучшие варианты по запросу: "{text}"...
+    await update.message.reply_text(f"🔍 Ищу для тебя лучшие варианты по запросу: {text}...")
 (Здесь будет ИИ-подбор и фото)")
 
 def main():
