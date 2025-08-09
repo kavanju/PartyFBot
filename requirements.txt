@@ -3,3 +3,4 @@ g4f
 requests
 beautifulsoup4
 lxml
+flask
