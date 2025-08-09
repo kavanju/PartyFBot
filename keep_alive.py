@@ -1,3 +1,7 @@
+from keep_alive import keep_alive
+
+keep_alive()  # Запускает Flask-сервер, чтобы Render не выключил приложение
+
 from flask import Flask
 import threading
 import os
