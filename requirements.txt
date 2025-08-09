@@ -2,3 +2,4 @@ python-telegram-bot==20.3
 g4f
 requests
 beautifulsoup4
+lxml
